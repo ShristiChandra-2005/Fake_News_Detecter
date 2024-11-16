@@ -1,0 +1,46 @@
+# Importing libraries
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import LinearSVC  # Corrected the model import
+from sklearn.metrics import accuracy_score
+
+# Step 1: Load Dataset
+df = pd.read_csv("C:/Users/SHRISTICHANDRA/Downloads/fake_or_real_news.csv")  # Corrected file extension to .csv
+
+# Step 2: Check for missing values and clean the dataset
+# Assuming 'label' is the column with REAL/FAKE and 'text' is the column with news content
+df['fake'] = df['label'].apply(lambda x: 0 if x == "REAL" else 1)  # Corrected the dataset column reference
+
+# Step 3: Encode labels if necessary and drop unnecessary columns
+df = df.drop("label", axis=1)  # Dropping the 'label' column after encoding
+
+# Step 4: Split Data into Training and Testing Sets
+X = df['text']
+y = df['fake']
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Step 5: Text Vectorization using TF-IDF
+vectorizer = TfidfVectorizer(stop_words='english', max_df=0.7)
+X_train_tfidf = vectorizer.fit_transform(X_train)
+X_test_tfidf = vectorizer.transform(X_test)
+
+# Step 6: Train the Model
+clf = LinearSVC(dual='auto')  # Explicitly set 'dual' to avoid the warning
+clf.fit(X_train_tfidf, y_train)
+# Step 7: Make Predictions
+y_pred = clf.predict(X_test_tfidf)  # Corrected variable name from 'model' to 'clf'
+
+# Step 8: Evaluate the Model
+accuracy = accuracy_score(y_test, y_pred)
+print("Model Accuracy:", accuracy)
+
+# Step 9: Test on New Input
+def predict_news(news):
+    processed_news = vectorizer.transform([news])  # Preprocess input
+    prediction = clf.predict(processed_news)[0]  # Predict
+    return "Real News" if prediction == 0 else "Fake News"  # Adjusted to match encoding logic
+
+# Test with a sample input
+sample_news = "This is an example of a news headline."
+print(predict_news(sample_news))
